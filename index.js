@@ -9,11 +9,26 @@ const TOKEN = process.env.TOKEN;
 const CLIENT_ID = '1484508290082672670';
 const ALLOWED_USER_ID = '1142244896779026525';
 const FIREBASE_URL = 'https://robloxhack12-e2e2c-default-rtdb.europe-west1.firebasedatabase.app/status.json';
-const POLL_INTERVAL = 10_000; // Revisa Firebase cada 10 segundos
+const FIREBASE_CONFIG_URL = 'https://robloxhack12-e2e2c-default-rtdb.europe-west1.firebasedatabase.app/botconfig.json';
+const POLL_INTERVAL = 10_000;
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let updateChannel = null;
-let lastVersion = null; // Última versión conocida para detectar cambios
+let lastVersion = null;
+
+async function saveChannelId(channelId) {
+  await fetch(FIREBASE_CONFIG_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channelId }),
+  });
+}
+
+async function loadChannelId() {
+  const res = await fetch(FIREBASE_CONFIG_URL);
+  const data = await res.json();
+  return data?.channelId || null;
+}
 
 // ─── CLIENT ───────────────────────────────────────────────────────────────────
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -89,6 +104,17 @@ client.once('ready', async () => {
   console.log(`🤖 Bot listo como ${client.user.tag}`);
   await registerCommands();
 
+  // Recupera el canal guardado en Firebase
+  try {
+    const channelId = await loadChannelId();
+    if (channelId) {
+      updateChannel = await client.channels.fetch(channelId);
+      console.log(`📌 Canal recuperado: ${updateChannel.name}`);
+    }
+  } catch (err) {
+    console.error('⚠️ No se pudo recuperar el canal:', err.message);
+  }
+
   // Carga el estado inicial sin publicar nada
   try {
     const data = await fetchFirebase();
@@ -111,6 +137,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.commandName === 'set') {
     updateChannel = interaction.channel;
+    await saveChannelId(interaction.channel.id);
     return interaction.reply({ content: '✅ Done! Este canal recibirá las actualizaciones automáticamente.', ephemeral: true });
   }
 });
