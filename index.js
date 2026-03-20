@@ -139,8 +139,9 @@ client.on('interactionCreate', async (interaction) => {
 
     if (interaction.commandName === 'set') {
       updateChannel = interaction.channel;
+      await interaction.reply({ content: '✅ Done! Este canal recibirá las actualizaciones automáticamente.', ephemeral: true });
       await saveChannelId(interaction.channel.id);
-      return interaction.reply({ content: '✅ Done! Este canal recibirá las actualizaciones automáticamente.', ephemeral: true });
+      return;
     }
   } catch (err) {
     console.error('⚠️ Error en interacción:', err.message);
