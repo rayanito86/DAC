@@ -129,16 +129,21 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  try {
+    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.user) return;
 
-  if (interaction.user.id !== ALLOWED_USER_ID) {
-    return interaction.reply({ content: '❌ No tienes permiso para usar este comando.', ephemeral: true });
-  }
+    if (interaction.user.id !== ALLOWED_USER_ID) {
+      return interaction.reply({ content: '❌ No tienes permiso para usar este comando.', ephemeral: true });
+    }
 
-  if (interaction.commandName === 'set') {
-    updateChannel = interaction.channel;
-    await saveChannelId(interaction.channel.id);
-    return interaction.reply({ content: '✅ Done! Este canal recibirá las actualizaciones automáticamente.', ephemeral: true });
+    if (interaction.commandName === 'set') {
+      updateChannel = interaction.channel;
+      await saveChannelId(interaction.channel.id);
+      return interaction.reply({ content: '✅ Done! Este canal recibirá las actualizaciones automáticamente.', ephemeral: true });
+    }
+  } catch (err) {
+    console.error('⚠️ Error en interacción:', err.message);
   }
 });
 
